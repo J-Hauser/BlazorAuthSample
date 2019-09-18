@@ -1,0 +1,79 @@
+﻿@using System.Net.Http
+@using System.Security.Claims;
+@using Microsoft.AspNetCore.Authentication.Cookies;
+@using Microsoft.AspNetCore.Http;
+@inject LoginViewModel ViewModel
+@inject HttpClient _httpClient
+@inject NavigationManager _navigationManager
+
+<h3>Login</h3>
+<EditForm Model="@ViewModel" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="form-group row">
+        <label for="userName" class="col-sm-2">User: </label>
+        <div class="col-sm-12">
+            <InputText Id="userName" @bind-Value="@ViewModel.UserName" />
+            <ValidationMessage For="@(() => ViewModel.UserName)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="passWord" class="col-sm-2">Password: </label>
+        <div class="col-sm-12">
+            <InputText Id="passWord" @bind-Value="@ViewModel.Password" />
+            <ValidationMessage For="@(() => ViewModel.Password)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="dataSource" class="col-sm-2">DataSource: </label>
+        <div class="col-sm-12">
+            <InputSelect @bind-Value="@ViewModel.SelectedDataSource">
+                @foreach (var item in ViewModel.DataSources)
+                {
+                    <option>@item</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col-auto">
+            <button type="reset" @onclick="Reset">Cancel</button>
+        </div>
+        <div class="col-auto">
+            <button type="submit">Buchen</button>
+        </div>
+    </div>
+</EditForm>
+
+@code
+{
+    [Inject] public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+    [Inject] public IHttpContextAccessor Accessor { get; set; }
+
+    async void OnValidSubmit()
+    {
+        var url = _navigationManager.ToAbsoluteUri("/Login");
+        HttpResponseMessage result = await _httpClient.PostAsJsonAsync<LoginViewModel>(url.ToString(), ViewModel);
+
+        if (result.IsSuccessStatusCode)
+        {
+            ////user not authenticated
+            //var context = Accessor.HttpContext;
+            //////this works... 
+            //var provider = (AuthenticationStateProvider as IHostEnvironmentAuthenticationStateProvider);
+            //provider?.SetAuthenticationState(
+            //    Task.FromResult(
+            //        new AuthenticationState(
+            //            new System.Security.Claims.ClaimsPrincipal(
+            //                new ClaimsIdentity(
+            //                    new List<Claim> { new Claim(ClaimTypes.Name, ViewModel.UserName), },
+            //                    CookieAuthenticationDefaults.AuthenticationScheme)))));
+            _navigationManager.NavigateTo("~/", forceLoad: true);
+        }
+    }
+
+    void Reset()
+    {
+        ViewModel.Clear();
+        StateHasChanged();
+    }
+}
